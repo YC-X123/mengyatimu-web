@@ -1,9 +1,9 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import axios from 'axios'
 
-// 设置axios默认配置
+// 设置axios默认配置 - 使用完整的后端URL
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: 'https://mengyatimu-web-production.up.railway.app/api',
   headers: {
     'Content-Type': 'application/json'
   }
