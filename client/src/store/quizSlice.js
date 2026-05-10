@@ -78,6 +78,37 @@ export const deleteQuestion = createAsyncThunk(
   }
 )
 
+export const batchDeleteQuestions = createAsyncThunk(
+  'quiz/batchDeleteQuestions',
+  async (ids, thunkAPI) => {
+    try {
+      const token = localStorage.getItem('token')
+      await axios.delete(`${API_URL}/quiz/batch`, {
+        headers: { Authorization: `Bearer ${token}` },
+        data: { ids }
+      })
+      return ids
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response.data.message)
+    }
+  }
+)
+
+export const syncQuestions = createAsyncThunk(
+  'quiz/syncQuestions',
+  async (_, thunkAPI) => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await axios.post(`${API_URL}/quiz/sync`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      return response.data
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response.data.message)
+    }
+  }
+)
+
 export const generateQuestion = createAsyncThunk(
   'quiz/generateQuestion',
   async (topic, thunkAPI) => {
@@ -139,6 +170,12 @@ const quizSlice = createSlice({
       })
       .addCase(deleteQuestion.fulfilled, (state, action) => {
         state.questions = state.questions.filter(q => q._id !== action.payload)
+      })
+      .addCase(batchDeleteQuestions.fulfilled, (state, action) => {
+        state.questions = state.questions.filter(q => !action.payload.includes(q._id))
+      })
+      .addCase(syncQuestions.fulfilled, (state, action) => {
+        state.questions = action.payload
       })
       .addCase(generateQuestion.fulfilled, (state, action) => {
         state.questions.push(action.payload)
