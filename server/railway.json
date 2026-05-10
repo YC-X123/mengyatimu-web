@@ -1,0 +1,35 @@
+{
+  "$schema": "https://railway.app/schema.json",
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "npm install",
+    "startCommand": "npm start"
+  },
+  "deploy": {
+    "region": "us-east1",
+    "numReplicas": 1
+  },
+  "env": {
+    "MONGO_URI": {
+      "description": "MongoDB connection string from MongoDB Atlas",
+      "required": true
+    },
+    "JWT_SECRET": {
+      "description": "Secret key for JWT tokens",
+      "required": true
+    },
+    "PORT": "5000",
+    "DOUBAO_API_KEY": {
+      "required": false
+    },
+    "DOUBAO_APP_ID": {
+      "required": false
+    },
+    "DOUBAO_ACCESS_TOKEN": {
+      "required": false
+    },
+    "DOUBAO_SECRET_KEY": {
+      "required": false
+    }
+  }
+}
