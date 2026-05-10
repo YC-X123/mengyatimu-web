@@ -15,10 +15,7 @@ const app = express()
 const PORT = process.env.PORT || 5000
 
 // 中间件
-app.use(cors({
-  origin: ['https://www.mengyatimu.com', 'http://www.mengyatimu.com'],
-  credentials: true
-}))
+app.use(cors())
 app.use(express.json())
 
 // 路由
