@@ -1,4 +1,6 @@
-{
+﻿const fs = require('fs');
+
+const content = `{
   "name": "ai-quiz-client",
   "private": true,
   "version": "0.0.0",
@@ -24,4 +26,7 @@
     "@vitejs/plugin-react": "^4.3.1",
     "vite": "^5.4.8"
   }
-}
+}`;
+
+fs.writeFileSync('client/package.json', content, 'utf8');
+console.log('File written successfully without BOM!');
