@@ -1,104 +1,195 @@
 ﻿import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import axios from 'axios'
 
-const API_URL = 'https://mengyatimu-web-production.up.railway.app'
-
-const initialState = {
-  user: null,
-  token: localStorage.getItem('token'),
-  isLoading: false,
-  error: null
-}
-
-export const login = createAsyncThunk('auth/login', async (credentials, thunkAPI) => {
-  try {
-    const response = await axios.post(`${API_URL}/api/auth/login`, credentials)
-    localStorage.setItem('token', response.data.token)
-    return response.data
-  } catch (error) {
-    return thunkAPI.rejectWithValue(error.response.data.message)
+// 璁剧疆axios榛樿閰嶇疆
+const api = axios.create({
+  baseURL: 'https://mengyatimu-web-production.up.railway.app/api',
+  headers: {
+    'Content-Type': 'application/json'
   }
 })
 
-export const register = createAsyncThunk('auth/register', async (userData, thunkAPI) => {
+// 璇锋眰鎷︽埅鍣?
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
+// 寮傛鐧诲綍
+export const login = createAsyncThunk('auth/login', async (credentials, { rejectWithValue }) => {
   try {
-    const response = await axios.post(`${API_URL}/api/auth/register`, userData)
-    localStorage.setItem('token', response.data.token)
+    const response = await api.post('/auth/login', credentials)
     return response.data
   } catch (error) {
-    return thunkAPI.rejectWithValue(error.response.data.message)
+    return rejectWithValue(error.response.data)
   }
 })
 
-export const checkAuth = createAsyncThunk('auth/checkAuth', async (_, thunkAPI) => {
+// 寮傛娉ㄥ唽
+export const register = createAsyncThunk('auth/register', async (userData, { rejectWithValue }) => {
   try {
-    const token = localStorage.getItem('token')
-    if (!token) throw new Error('No token')
-    const response = await axios.get(`${API_URL}/api/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    const response = await api.post('/auth/register', userData)
     return response.data
   } catch (error) {
-    localStorage.removeItem('token')
-    return thunkAPI.rejectWithValue(error.message)
+    return rejectWithValue(error.response.data)
   }
 })
 
-export const logout = createAsyncThunk('auth/logout', async () => {
-  localStorage.removeItem('token')
-  return null
+// 鑾峰彇鐢ㄦ埛鍒楄〃
+export const getUsers = createAsyncThunk('auth/getUsers', async (_, { rejectWithValue }) => {
+  try {
+    const response = await api.get('/auth/users')
+    return response.data
+  } catch (error) {
+    return rejectWithValue(error.response.data)
+  }
+})
+
+// 鍒涘缓鐢ㄦ埛
+export const createUser = createAsyncThunk('auth/createUser', async (userData, { rejectWithValue }) => {
+  try {
+    const response = await api.post('/auth/register', userData)
+    return response.data
+  } catch (error) {
+    return rejectWithValue(error.response.data)
+  }
+})
+
+// 鏇存柊鐢ㄦ埛
+export const updateUser = createAsyncThunk('auth/updateUser', async (userData, { rejectWithValue }) => {
+  try {
+    const { id, ...data } = userData
+    const response = await api.put(`/auth/users/${id}`, data)
+    return response.data
+  } catch (error) {
+    return rejectWithValue(error.response.data)
+  }
+})
+
+// 鍒犻櫎鐢ㄦ埛
+export const deleteUser = createAsyncThunk('auth/deleteUser', async (userId, { rejectWithValue }) => {
+  try {
+    const response = await api.delete(`/auth/users/${userId}`)
+    return response.data
+  } catch (error) {
+    return rejectWithValue(error.response.data)
+  }
 })
 
 const authSlice = createSlice({
   name: 'auth',
-  initialState,
-  reducers: {},
+  initialState: {
+    user: null,
+    users: [],
+    isAuthenticated: false,
+    loading: false,
+    error: null
+  },
+  reducers: {
+    logout: (state) => {
+      state.user = null
+      state.users = []
+      state.isAuthenticated = false
+      state.loading = false
+      state.error = null
+      localStorage.removeItem('token')
+    },
+    clearError: (state) => {
+      state.error = null
+    }
+  },
   extraReducers: (builder) => {
+    // 鐧诲綍
     builder
       .addCase(login.pending, (state) => {
-        state.isLoading = true
+        state.loading = true
         state.error = null
       })
       .addCase(login.fulfilled, (state, action) => {
-        state.isLoading = false
+        state.loading = false
+        state.isAuthenticated = true
         state.user = action.payload.user
-        state.token = action.payload.token
+        localStorage.setItem('token', action.payload.token)
       })
       .addCase(login.rejected, (state, action) => {
-        state.isLoading = false
-        state.error = action.payload
+        state.loading = false
+        state.error = action.payload.message
       })
+    // 娉ㄥ唽
+    builder
       .addCase(register.pending, (state) => {
-        state.isLoading = true
+        state.loading = true
         state.error = null
       })
       .addCase(register.fulfilled, (state, action) => {
-        state.isLoading = false
+        state.loading = false
+        state.isAuthenticated = true
         state.user = action.payload.user
-        state.token = action.payload.token
+        localStorage.setItem('token', action.payload.token)
       })
       .addCase(register.rejected, (state, action) => {
-        state.isLoading = false
-        state.error = action.payload
+        state.loading = false
+        state.error = action.payload.message
       })
-      .addCase(checkAuth.pending, (state) => {
-        state.isLoading = true
+    // 鑾峰彇鐢ㄦ埛鍒楄〃
+    builder
+      .addCase(getUsers.pending, (state) => {
+        state.loading = true
         state.error = null
       })
-      .addCase(checkAuth.fulfilled, (state, action) => {
-        state.isLoading = false
-        state.user = action.payload
+      .addCase(getUsers.fulfilled, (state, action) => {
+        state.loading = false
+        state.users = action.payload.users
       })
-      .addCase(checkAuth.rejected, (state) => {
-        state.isLoading = false
-        state.user = null
-        state.token = null
+      .addCase(getUsers.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload.message
       })
-      .addCase(logout.fulfilled, (state) => {
-        state.user = null
-        state.token = null
+    // 鍒涘缓鐢ㄦ埛
+    builder
+      .addCase(createUser.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(createUser.fulfilled, (state) => {
+        state.loading = false
+      })
+      .addCase(createUser.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload.message
+      })
+    // 鏇存柊鐢ㄦ埛
+    builder
+      .addCase(updateUser.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(updateUser.fulfilled, (state) => {
+        state.loading = false
+      })
+      .addCase(updateUser.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload.message
+      })
+    // 鍒犻櫎鐢ㄦ埛
+    builder
+      .addCase(deleteUser.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(deleteUser.fulfilled, (state) => {
+        state.loading = false
+      })
+      .addCase(deleteUser.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload.message
       })
   }
 })
 
+export const { logout, clearError } = authSlice.actions
 export default authSlice.reducer
+
